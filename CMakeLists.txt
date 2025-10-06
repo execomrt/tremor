@@ -6,18 +6,19 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # Create the library
 add_library(tremor
-  bitwise.c
-  codebook.c
-  floor0.c
-  floor1.c
-  mapping0.c
-  mdct.c
-  registry.c
-  res012.c
-  sharedbook.c
-  synthesis.c
-  vorbisfile.c
-  window.c
+    block.c
+    codebook.c
+    floor0.c
+    floor1.c
+    info.c
+    mapping0.c
+    mdct.c
+    registry.c
+    res012.c
+    sharedbook.c
+    synthesis.c
+    vorbisfile.c
+    window.c
 )
 
 # Include headers
