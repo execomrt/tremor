@@ -61,4 +61,8 @@
 #  define max(x,y)  ((x)<(y)?(y):(x))
 #endif
 
+#ifdef ANDROID
+#include <endian.h>
+#endif 
+
 #endif /* _OS_H */
