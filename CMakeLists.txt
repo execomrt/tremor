@@ -21,7 +21,14 @@ add_library(tremor
 )
 
 # Include headers
-target_include_directories(tremor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# Include headers
+target_include_directories(tremor
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>   # fallback if headers are at root
+    $<INSTALL_INTERFACE:include>
+)
+
 
 # Optional: define ARM optimizations
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
