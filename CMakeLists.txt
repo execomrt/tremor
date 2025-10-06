@@ -1,10 +1,39 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.140)
+set(CMAKE_POLICY_VERSION 3.27)      # or 3.30 / 3.31 if that's the CMake you use
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 project(tremor LANGUAGES C)
 
-# Optional: allow user to choose static or shared
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+option(TREMOR_FETCH_OGG "Fetch libogg if not found in parent build" ON)
 
-# Create the library
+# ---- libogg (dependency) -----------------------------------------------------
+# If the parent project already provided libogg, we won't fetch it.
+if (NOT TARGET Ogg::ogg AND NOT TARGET ogg)
+  if (TREMOR_FETCH_OGG)
+    include(FetchContent)
+    # Prefer release tag; swap if you need a fork
+    FetchContent_Declare(
+      ogg
+      GIT_REPOSITORY https://github.com/xiph/ogg.git
+      GIT_TAG        HEAD
+    )
+    # Silence tests/tools in ogg
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(ogg)
+  else()
+    message(FATAL_ERROR
+      "libogg not found and TREMOR_FETCH_OGG=OFF. "
+      "Provide Ogg::ogg or ogg target from the parent build.")
+  endif()
+endif()
+
+# Create a modern namespace alias if upstream exports plain 'ogg'
+if (TARGET ogg AND NOT TARGET Ogg::ogg)
+  add_library(Ogg::ogg ALIAS ogg)
+endif()
+
+# ---- tremor library ----------------------------------------------------------
 add_library(tremor
     block.c
     codebook.c
@@ -21,17 +50,25 @@ add_library(tremor
     window.c
 )
 
-# Include headers
-# Include headers
+# Make tremor headers visible to dependents
+# If your headers are under 'include/tremor', prefer that path.
 target_include_directories(tremor
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>   # fallback if headers are at root
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>      # fallback if headers sit at root
     $<INSTALL_INTERFACE:include>
 )
 
+# Link libogg and propagate usage to consumers (PUBLIC)
+target_link_libraries(tremor PUBLIC Ogg::ogg)
 
-# Optional: define ARM optimizations
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+# Good defaults for Android and static consumption
+set_target_properties(tremor PROPERTIES
+  C_STANDARD 99
+  POSITION_INDEPENDENT_CODE ON
+)
+
+# Optional: enable ARM asm path used by some forks
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
   target_compile_definitions(tremor PRIVATE ARM_ASSEM)
 endif()
