@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.140)
+cmake_minimum_required(VERSION 3.14)
 set(CMAKE_POLICY_VERSION 3.27)      # or 3.30 / 3.31 if that's the CMake you use
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
@@ -66,6 +66,11 @@ target_link_libraries(tremor PUBLIC Ogg::ogg)
 set_target_properties(tremor PROPERTIES
   C_STANDARD 99
   POSITION_INDEPENDENT_CODE ON
+)
+
+target_compile_options(tremor PRIVATE
+  $<$<C_COMPILER_ID:MSVC>:/wd4244 /wd4267 /wd4996 /wd4005 /wd4114>
+  $<$<AND:$<C_COMPILER_ID:Clang>,$<PLATFORM_ID:Windows>>:/wd4244 /wd4267 /wd4996 /wd4005 /wd4114> # clang-cl
 )
 
 # Optional: enable ARM asm path used by some forks
